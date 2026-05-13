@@ -2,41 +2,60 @@ import streamlit as st
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-# Título de la aplicación
-st.title("Conversión de Temperatura: Celsius a Fahrenheit")
+# Configuración de página
+st.set_page_config(page_title="Predicción de Temperatura", page_icon="🌡️", layout="wide")
 
-# Cargar los datos desde el archivo CSV
-df = pd.read_csv('celsius.csv')
+# Título y Encabezado
+st.title("🌡️ Conversor Inteligente: Celsius a Fahrenheit")
+st.markdown("""
+Esta aplicación utiliza **Inteligencia Artificial (Regresión Lineal)** para aprender y predecir 
+temperaturas en base a datos históricos. ¡Descubre cómo se relacionan los grados Celsius y Fahrenheit!
+""")
 
-# Mostrar las primeras filas usando df.head()
-st.subheader("Primeras filas (datos.head())")
-st.dataframe(df.head())
+# Cargar los datos de forma optimizada
+@st.cache_data
+def load_data():
+    return pd.read_csv('celsius.csv')
 
-# Mostrar el DataFrame completo en la aplicación
-st.subheader("Tabla de datos (DataFrame completo)")
-st.dataframe(df)
+df = load_data()
 
-# Mostrar un gráfico lineal para visualizar la relación
-st.subheader("Gráfico de relación")
-st.line_chart(df, x="Celsius", y="Fahrenheit")
-
-# --- Modelo de Machine Learning ---
-st.subheader("🤖 Predicción con Machine Learning")
-st.write("Hemos entrenado un modelo de Regresión Lineal con los datos anteriores. Usa el deslizador para predecir.")
-
-# Preparar los datos
-X = df[['Celsius']] # Características (Input)
-y = df['Fahrenheit'] # Etiqueta (Output)
-
-# Crear y entrenar el modelo
+# Preparar y entrenar modelo
+X = df[['Celsius']]
+y = df['Fahrenheit']
 modelo = LinearRegression()
 modelo.fit(X, y)
 
-# Input interactivo del usuario
-celsius_input = st.slider("Selecciona una temperatura en Celsius:", min_value=-50, max_value=100, value=0)
+# Crear un diseño de dos columnas
+col1, col2 = st.columns(2)
 
-# Realizar la predicción
-fahrenheit_pred = modelo.predict([[celsius_input]])[0]
+with col1:
+    st.subheader("🤖 Predicción Interactiva")
+    st.markdown("Usa el deslizador de abajo para probar el modelo con cualquier temperatura:")
+    
+    # Input interactivo
+    celsius_input = st.slider("Selecciona °Celsius:", min_value=-50, max_value=100, value=25, step=1)
+    
+    # Realizar la predicción
+    fahrenheit_pred = modelo.predict([[celsius_input]])[0]
+    
+    # Tarjeta de métrica con un diseño más limpio
+    st.metric(label="Resultado en Fahrenheit", value=f"{fahrenheit_pred:.2f} °F")
+    
+    st.success(f"¡El modelo estima que **{celsius_input} °C** son **{fahrenheit_pred:.2f} °F**!")
 
-# Mostrar el resultado de forma destacada
-st.success(f"**{celsius_input} °C** equivalen aproximadamente a **{fahrenheit_pred:.2f} °F** según el modelo.")
+with col2:
+    st.subheader("📈 Relación de Datos")
+    # Gráfico mejorado que ocupa su columna
+    st.line_chart(df, x="Celsius", y="Fahrenheit")
+
+st.divider()
+
+# Datos brutos al final en un desplegable para mantener la interfaz limpia
+with st.expander("📊 Ver los datos originales (Dataset)"):
+    col_data1, col_data2 = st.columns(2)
+    with col_data1:
+        st.markdown("**Vista rápida (primeras filas):**")
+        st.dataframe(df.head(), use_container_width=True)
+    with col_data2:
+        st.markdown("**Dataset completo:**")
+        st.dataframe(df, use_container_width=True)
